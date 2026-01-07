@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doosan Robot Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+</head>
+<body>
+  <!-- Lock Screen -->
+  <div class="lock-screen" id="lockScreen">
+    <div class="lock-container">
+      <div class="lock-icon">🔐</div>
+      <h2 class="lock-title">Robot Control</h2>
+      <p class="lock-subtitle">Enter 4-digit PIN to continue</p>
+      
+      <div class="pin-input-container">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" data-index="0">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" data-index="1">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" data-index="2">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" data-index="3">
+      </div>
+      
+      <p class="lock-hint">Default PIN: 1234</p>
+      <p class="lock-error" id="lockError"></p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app-container">
+    <header class="header">
+      <h1>🤖 Doosan E0509</h1>
+      <p class="subtitle">Robot Control Interface</p>
+    </header>
+
+    <div class="connection-bar">
+      <div class="connection-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Disconnected</span>
+      </div>
+      <div class="connection-input">
+        <input type="text" id="rosbridgeUrl" placeholder="192.168.0.100:9090" value="localhost:9090">
+        <button class="btn-connect" id="btnConnect">Connect</button>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-page="manual">
+        <span class="tab-icon">🎮</span>
+        Manual
+      </button>
+      <button class="nav-tab" data-page="script">
+        <span class="tab-icon">💻</span>
+        Script
+      </button>
+      <button class="nav-tab" data-page="sim2real">
+        <span class="tab-icon">🧠</span>
+        Sim2Real
+      </button>
+    </nav>
+
+    <!-- Page 1: Manual Control -->
+    <section class="page active" id="page-manual">
+      <div class="card">
+        <h2 class="card-title">Joint Control</h2>
+        <div class="joint-grid">
+          <div class="joint-row">
+            <span class="joint-label">Joint 1</span>
+            <input type="number" class="joint-input" id="joint1" value="0" step="1">
+            <span class="joint-unit">deg</span>
+          </div>
+          <div class="joint-row">
+            <span class="joint-label">Joint 2</span>
+            <input type="number" class="joint-input" id="joint2" value="0" step="1">
+            <span class="joint-unit">deg</span>
+          </div>
+          <div class="joint-row">
+            <span class="joint-label">Joint 3</span>
+            <input type="number" class="joint-input" id="joint3" value="90" step="1">
+            <span class="joint-unit">deg</span>
+          </div>
+          <div class="joint-row">
+            <span class="joint-label">Joint 4</span>
+            <input type="number" class="joint-input" id="joint4" value="0" step="1">
+            <span class="joint-unit">deg</span>
+          </div>
+          <div class="joint-row">
+            <span class="joint-label">Joint 5</span>
+            <input type="number" class="joint-input" id="joint5" value="90" step="1">
+            <span class="joint-unit">deg</span>
+          </div>
+          <div class="joint-row">
+            <span class="joint-label">Joint 6</span>
+            <input type="number" class="joint-input" id="joint6" value="0" step="1">
+            <span class="joint-unit">deg</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title orange">Gripper Control</h2>
+        <div class="joint-row gripper">
+          <span class="joint-label">Stroke</span>
+          <div class="gripper-slider-container">
+            <input type="range" class="gripper-slider" id="gripperSlider" min="0" max="700" value="0">
+            <span class="gripper-value" id="gripperValue">0</span>
+          </div>
+        </div>
+        <div class="gripper-labels">
+          <span>Open (0)</span>
+          <span>Close (700)</span>
+        </div>
+      </div>
+
+      <button class="btn-execute" id="btnExecute">Execute Movement</button>
+    </section>
+
+    <!-- Page 2: Script Editor -->
+    <section class="page" id="page-script">
+      <div class="card">
+        <h2 class="card-title green">Python Code Editor</h2>
+        
+        <div class="editor-toolbar">
+          <button class="btn-template" data-template="move">Move Joint</button>
+          <button class="btn-template" data-template="gripper">Gripper</button>
+          <button class="btn-template" data-template="sequence">Sequence</button>
+          <button class="btn-clear-editor" id="btnClearEditor">Clear</button>
+        </div>
+
+        <textarea class="code-editor" id="codeEditor" placeholder="# Write your Python code here...
+# Example:
+import rclpy
+from rclpy.node import Node
+
+# Your robot control code..." spellcheck="false"></textarea>
+
+        <button class="btn-run-script" id="btnRunScript">▶ Run Script</button>
+      </div>
+
+      <div class="card">
+        <div class="console-header">
+          <h2 class="card-title purple">Console Output</h2>
+          <button class="btn-clear-console" id="btnClearConsole">Clear</button>
+        </div>
+        <div class="console-output" id="consoleOutput">
+          <div class="log-entry info">[System] Ready to execute scripts...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page 3: Sim2Real -->
+    <section class="page" id="page-sim2real">
+      <div class="card">
+        <div class="empty-state">
+          <div class="empty-icon">🚧</div>
+          <h3>Coming Soon</h3>
+          <p>This section will be available once the Sim2Real task is defined.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
